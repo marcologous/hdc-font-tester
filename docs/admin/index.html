@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HDC Font Tester — Admin</title>
+<link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+<div id="hdc-login-view" class="hdc-admin-panel">
+  <h1>HDC Font Manager</h1>
+  <p class="hdc-help">
+    Paste a GitHub personal access token with write access to
+    <strong>marcologous/hdc-font-tester</strong>. It's kept in memory for this
+    tab only — never saved, never sent anywhere except api.github.com.
+    <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained token</a>
+    scoped to this one repo with <strong>Contents: Read and write</strong>.
+  </p>
+  <form id="hdc-login-form">
+    <label for="hdc-token">GitHub token</label>
+    <input type="password" id="hdc-token" name="token" autocomplete="off" required />
+    <button type="submit">Connect</button>
+    <p id="hdc-login-error" class="hdc-error" hidden></p>
+  </form>
+</div>
+
+<div id="hdc-manager-view" class="hdc-admin-panel" hidden>
+  <div class="hdc-admin-header">
+    <h1>HDC Font Manager</h1>
+    <button id="hdc-logout-btn" class="hdc-btn-secondary" type="button">Disconnect</button>
+  </div>
+
+  <section class="hdc-admin-section">
+    <h2>Add a font</h2>
+    <form id="hdc-upload-form">
+      <label for="hdc-font-file">Font file (.woff2, .woff, .ttf, .otf)</label>
+      <input type="file" id="hdc-font-file" name="font" accept=".woff2,.woff,.ttf,.otf" required />
+
+      <label for="hdc-family">Family name</label>
+      <input type="text" id="hdc-family" name="family" placeholder="e.g. HDC Grotesk" required />
+
+      <div class="hdc-inline-fields">
+        <div>
+          <label for="hdc-weight">Weight</label>
+          <select id="hdc-weight" name="weight">
+            <option value="100">100 — Thin</option>
+            <option value="200">200 — Extra Light</option>
+            <option value="300">300 — Light</option>
+            <option value="400" selected>400 — Regular</option>
+            <option value="500">500 — Medium</option>
+            <option value="600">600 — Semibold</option>
+            <option value="700">700 — Bold</option>
+            <option value="800">800 — Extra Bold</option>
+            <option value="900">900 — Black</option>
+          </select>
+        </div>
+        <div>
+          <label for="hdc-style">Style</label>
+          <select id="hdc-style" name="style">
+            <option value="normal" selected>Normal</option>
+            <option value="italic">Italic</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" id="hdc-upload-submit">Upload font</button>
+      <p id="hdc-upload-error" class="hdc-error" hidden></p>
+      <p id="hdc-upload-success" class="hdc-success" hidden></p>
+    </form>
+  </section>
+
+  <section class="hdc-admin-section">
+    <h2>Current fonts</h2>
+    <ul id="hdc-font-list" class="hdc-font-list"></ul>
+  </section>
+
+  <p class="hdc-help hdc-help--footer">
+    Changes are committed straight to the repo. GitHub Pages takes roughly
+    30&ndash;60 seconds to rebuild after a commit, so a new or removed font
+    may take a moment to show up on the live tester page.
+  </p>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
