@@ -29,7 +29,7 @@ plus a small listener script, not just a bare `<iframe>`:
 
 ```html
 <iframe
-  id="hdc-font-tester-frame"
+  data-hdc-font-tester
   src="https://marcologous.github.io/hdc-font-tester/"
   style="width:100%; height:600px; border:0; display:block;"
   title="Hanken Design Co. Type Tester"
@@ -39,9 +39,12 @@ plus a small listener script, not just a bare `<iframe>`:
   window.addEventListener('message', function (event) {
     if (event.origin !== 'https://marcologous.github.io') return;
     var data = event.data;
-    if (data && data.source === 'hdc-font-tester') {
-      var frame = document.getElementById('hdc-font-tester-frame');
-      if (frame) frame.style.height = data.height + 'px';
+    if (!data || data.source !== 'hdc-font-tester') return;
+    var frames = document.querySelectorAll('iframe[data-hdc-font-tester]');
+    for (var i = 0; i < frames.length; i++) {
+      if (frames[i].contentWindow === event.source) {
+        frames[i].style.height = data.height + 'px';
+      }
     }
   });
 </script>
@@ -49,3 +52,8 @@ plus a small listener script, not just a bare `<iframe>`:
 
 The `height:600px` is just a placeholder shown before the first resize message
 arrives — it'll snap to the real height within a moment of the iframe loading.
+
+Note this deliberately matches each message to the iframe that actually sent it
+(via `event.source`) instead of a hardcoded `id` — so if this snippet ever ends
+up pasted onto the same page more than once, each embed still resizes
+correctly instead of every message resizing only the first one it finds.
