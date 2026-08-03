@@ -76,6 +76,17 @@
     return 400;
   }
 
+  // Static fonts often bake the weight/style into the family name itself
+  // (e.g. "Intevia Thin", "Intevia ExtraBold") rather than using a shared
+  // family with a plain weight axis. Strip that trailing word off so all
+  // weights of the same typeface group together under one key.
+  const TRAILING_STYLE_WORD = /\s+(thin|extra[- ]?light|ultra[- ]?light|light|regular|normal|roman|book|medium|semi[- ]?bold|demi[- ]?bold|extra[- ]?bold|ultra[- ]?bold|black|heavy|bold|italic|oblique)$/i;
+
+  function canonicalFamily(family) {
+    const stripped = family.replace(TRAILING_STYLE_WORD, '').trim();
+    return stripped || family;
+  }
+
   function readFontMetadata(parsed, filename) {
     const tables = parsed.opentype.tables;
     const nameTable = tables.name;
@@ -134,14 +145,16 @@
             const buffer = await fetch(url).then((r) => r.arrayBuffer());
             const parsed = await parseFont(buffer, file.name);
             const meta = readFontMetadata(parsed, file.name);
-            return { id: file.name, filename: file.name, url, ...meta };
+            return { id: file.name, filename: file.name, url, familyGroup: canonicalFamily(meta.family), ...meta };
           } catch (err) {
             console.error(`Failed to parse ${file.name}`, err);
+            const family = familyFromFilename(file.name);
             return {
               id: file.name,
               filename: file.name,
               url,
-              family: familyFromFilename(file.name),
+              family,
+              familyGroup: canonicalFamily(family),
               weight: '400',
               style: 'normal',
             };
@@ -150,11 +163,13 @@
       );
 
       parsedFonts.sort((a, b) => {
+        const groupCompare = a.familyGroup.localeCompare(b.familyGroup);
+        if (groupCompare !== 0) return groupCompare;
         const weightCompare = Number(a.weight) - Number(b.weight);
         if (weightCompare !== 0) return weightCompare;
-        const familyCompare = a.family.localeCompare(b.family);
-        if (familyCompare !== 0) return familyCompare;
-        return (STYLE_ORDER[a.style] ?? 0) - (STYLE_ORDER[b.style] ?? 0);
+        const styleCompare = (STYLE_ORDER[a.style] ?? 0) - (STYLE_ORDER[b.style] ?? 0);
+        if (styleCompare !== 0) return styleCompare;
+        return a.family.localeCompare(b.family);
       });
 
       fonts = parsedFonts;
