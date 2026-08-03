@@ -9,7 +9,6 @@
 <body>
 <div class="hdc-tester" id="hdc-tester">
   <header class="hdc-toolbar">
-    <span class="hdc-brand">Hanken Design Co.&reg; Type Tester</span>
     <div class="hdc-toolbar__controls">
       <button type="button" id="hdc-invert-toggle" class="hdc-invert-btn" aria-pressed="false">Invert</button>
       <div class="hdc-font-picker" id="hdc-font-picker">
@@ -37,16 +36,7 @@
     </div>
   </header>
 
-  <div class="hdc-preview-card">
-    <div
-      id="hdc-preview"
-      class="hdc-preview"
-      contenteditable="true"
-      spellcheck="false"
-      autocorrect="off"
-      autocapitalize="off"
-    >Handgloves &amp; Jackdaws quiz nymph — 0123456789</div>
-  </div>
+  <p id="hdc-status" class="hdc-status" hidden></p>
 
   <div class="hdc-panel">
     <div class="hdc-sliders">
@@ -74,13 +64,17 @@
         <input type="range" id="hdc-leading" min="80" max="250" step="1" value="120" />
       </div>
     </div>
+  </div>
 
-    <div class="hdc-features">
-      <h3>OpenType Features</h3>
-      <div id="hdc-feature-list" class="hdc-chip-list">
-        <p class="hdc-feature-empty">Loading fonts…</p>
-      </div>
-    </div>
+  <div class="hdc-preview-card">
+    <div
+      id="hdc-preview"
+      class="hdc-preview"
+      contenteditable="true"
+      spellcheck="false"
+      autocorrect="off"
+      autocapitalize="off"
+    >Handgloves &amp; Jackdaws quiz nymph — 0123456789</div>
   </div>
 </div>
 

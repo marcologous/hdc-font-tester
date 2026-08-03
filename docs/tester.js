@@ -21,49 +21,8 @@
   const sizeValue = document.getElementById('hdc-size-value');
   const trackingValue = document.getElementById('hdc-tracking-value');
   const leadingValue = document.getElementById('hdc-leading-value');
-  const featureList = document.getElementById('hdc-feature-list');
+  const status = document.getElementById('hdc-status');
 
-  const FEATURE_LABELS = {
-    liga: 'Standard Ligatures',
-    dlig: 'Discretionary Ligatures',
-    hlig: 'Historical Ligatures',
-    kern: 'Kerning',
-    calt: 'Contextual Alternates',
-    case: 'Case-Sensitive Forms',
-    ordn: 'Ordinals',
-    onum: 'Oldstyle Figures',
-    lnum: 'Lining Figures',
-    pnum: 'Proportional Figures',
-    tnum: 'Tabular Figures',
-    smcp: 'Small Caps',
-    c2sc: 'Small Caps From Capitals',
-    subs: 'Subscript',
-    sups: 'Superscript',
-    frac: 'Fractions',
-    afrc: 'Alternative Fractions',
-    zero: 'Slashed Zero',
-    swsh: 'Swashes',
-    cswh: 'Contextual Swashes',
-    salt: 'Stylistic Alternates',
-    aalt: 'Access All Alternates',
-    hist: 'Historical Forms',
-    locl: 'Localized Forms',
-    mark: 'Mark Positioning',
-    mkmk: 'Mark to Mark Positioning',
-    titl: 'Titling Alternates',
-    nalt: 'Alternate Annotation Forms',
-    numr: 'Numerators',
-    dnom: 'Denominators',
-  };
-  for (let i = 1; i <= 20; i++) {
-    FEATURE_LABELS[`ss${String(i).padStart(2, '0')}`] = `Stylistic Set ${i}`;
-  }
-  for (let i = 1; i <= 99; i++) {
-    const tag = `cv${String(i).padStart(2, '0')}`;
-    if (!FEATURE_LABELS[tag]) FEATURE_LABELS[tag] = `Character Variant ${i}`;
-  }
-
-  const DEFAULT_ON_FEATURES = new Set(['liga', 'kern', 'calt']);
   const WEIGHT_KEYWORDS = [
     [/thin/i, 100],
     [/extra ?light|ultra ?light/i, 200],
@@ -75,12 +34,12 @@
     [/extra ?bold|ultra ?bold/i, 800],
     [/black|heavy/i, 900],
   ];
+  const STYLE_ORDER = { normal: 0, italic: 1 };
 
   let fonts = [];
   let filteredFonts = [];
   let selectedFontId = null;
   let highlightIndex = -1;
-  let activeFeatures = new Set();
   let fontFaceStyleEl = null;
 
   function ensureFontFaceStyleEl() {
@@ -135,16 +94,6 @@
     return { family, weight, style };
   }
 
-  function collectFeatureTags(parsed) {
-    const tags = new Set();
-    ['GSUB', 'GPOS'].forEach((tableName) => {
-      const table = parsed.opentype.tables[tableName];
-      const records = table && table.featureList && table.featureList.featureRecords;
-      if (records) records.forEach((r) => tags.add(r.featureTag));
-    });
-    return Array.from(tags).sort();
-  }
-
   async function listFontFiles() {
     const res = await fetch(`${API_BASE}/repos/${OWNER}/${REPO}/contents/${FONTS_DIR}?ref=${BRANCH}`, {
       cache: 'no-store',
@@ -165,6 +114,16 @@
     });
   }
 
+  function showStatus(message) {
+    if (!message) {
+      status.hidden = true;
+      status.textContent = '';
+      return;
+    }
+    status.hidden = false;
+    status.textContent = message;
+  }
+
   async function loadFonts() {
     try {
       const files = await listFontFiles();
@@ -175,14 +134,13 @@
             const buffer = await fetch(url).then((r) => r.arrayBuffer());
             const parsed = await parseFont(buffer, file.name);
             const meta = readFontMetadata(parsed, file.name);
-            return { id: file.name, filename: file.name, url, parsed, ...meta };
+            return { id: file.name, filename: file.name, url, ...meta };
           } catch (err) {
             console.error(`Failed to parse ${file.name}`, err);
             return {
               id: file.name,
               filename: file.name,
               url,
-              parsed: null,
               family: familyFromFilename(file.name),
               weight: '400',
               style: 'normal',
@@ -192,24 +150,27 @@
       );
 
       parsedFonts.sort((a, b) => {
+        const weightCompare = Number(a.weight) - Number(b.weight);
+        if (weightCompare !== 0) return weightCompare;
         const familyCompare = a.family.localeCompare(b.family);
         if (familyCompare !== 0) return familyCompare;
-        return Number(a.weight) - Number(b.weight);
+        return (STYLE_ORDER[a.style] ?? 0) - (STYLE_ORDER[b.style] ?? 0);
       });
 
       fonts = parsedFonts;
     } catch (err) {
       console.error('Failed to load fonts', err);
-      featureList.innerHTML = `<p class="hdc-feature-empty">${err.message || 'Failed to load fonts.'}</p>`;
+      showStatus(err.message || 'Failed to load fonts.');
       fonts = [];
     }
 
     renderFontListbox();
     if (fonts.length) {
+      showStatus(null);
       await selectFont(fonts[0].id);
     } else {
       fontPickerLabel.textContent = 'No fonts available';
-      featureList.innerHTML = '<p class="hdc-feature-empty">No fonts available yet.</p>';
+      showStatus('No fonts available yet.');
     }
   }
 
@@ -313,63 +274,6 @@
     preview.style.fontFamily = `"${faceName}", sans-serif`;
     preview.style.fontWeight = font.weight;
     preview.style.fontStyle = font.style;
-
-    detectFeatures(font);
-  }
-
-  function detectFeatures(font) {
-    featureList.innerHTML = '<p class="hdc-feature-empty">Loading features…</p>';
-    activeFeatures = new Set(DEFAULT_ON_FEATURES);
-
-    if (!font.parsed) {
-      featureList.innerHTML = '<p class="hdc-feature-empty">Could not read OpenType features for this font.</p>';
-      applyFeatureSettings();
-      return;
-    }
-
-    try {
-      renderFeatureList(collectFeatureTags(font.parsed));
-    } catch (err) {
-      console.error('Feature detection failed', err);
-      featureList.innerHTML = '<p class="hdc-feature-empty">Could not read OpenType features for this font.</p>';
-    }
-    applyFeatureSettings();
-  }
-
-  function renderFeatureList(tags) {
-    if (!tags.length) {
-      featureList.innerHTML = '<p class="hdc-feature-empty">No optional OpenType features detected.</p>';
-      return;
-    }
-    featureList.innerHTML = '';
-    tags.forEach((tag) => {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'hdc-chip';
-      const isActive = activeFeatures.has(tag);
-      chip.classList.toggle('is-active', isActive);
-      chip.setAttribute('aria-pressed', String(isActive));
-      chip.textContent = FEATURE_LABELS[tag] || tag;
-      chip.title = tag;
-
-      chip.addEventListener('click', () => {
-        const nowActive = !chip.classList.contains('is-active');
-        chip.classList.toggle('is-active', nowActive);
-        chip.setAttribute('aria-pressed', String(nowActive));
-        if (nowActive) activeFeatures.add(tag);
-        else activeFeatures.delete(tag);
-        applyFeatureSettings();
-      });
-
-      featureList.appendChild(chip);
-    });
-  }
-
-  function applyFeatureSettings() {
-    const settings = Array.from(activeFeatures)
-      .map((tag) => `"${tag}" 1`)
-      .join(', ');
-    preview.style.fontFeatureSettings = settings || 'normal';
   }
 
   function updateSliderFill(el) {

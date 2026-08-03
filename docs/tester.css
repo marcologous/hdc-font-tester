@@ -48,18 +48,16 @@ body {
 .hdc-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-.hdc-brand {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.hdc-status {
   color: var(--hdc-muted);
+  font-size: 13px;
+  margin: 0 0 16px;
 }
 
 .hdc-toolbar__controls {
@@ -212,7 +210,6 @@ body {
   min-height: 220px;
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
   transition: background-color 150ms ease, color 150ms ease;
 }
 
@@ -245,25 +242,23 @@ body {
 .hdc-panel {
   background: var(--hdc-card);
   border: 1px solid var(--hdc-border);
-  border-radius: var(--hdc-radius-lg);
+  border-radius: var(--hdc-radius-md);
   box-shadow: var(--hdc-shadow);
-  padding: 28px 32px 32px;
+  padding: 14px 24px;
+  margin-bottom: 16px;
 }
 
 .hdc-sliders {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
-  padding-bottom: 28px;
-  margin-bottom: 28px;
-  border-bottom: 1px solid var(--hdc-border);
+  gap: 24px;
 }
 
 .hdc-control__head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 .hdc-control label {
@@ -347,59 +342,6 @@ body {
 .hdc-control input[type="range"]:hover::-moz-range-thumb { transform: scale(1.1); }
 .hdc-control input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--hdc-fg); outline-offset: 2px; }
 
-/* ---------- opentype features ---------- */
-
-.hdc-features h3 {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--hdc-muted);
-  margin: 0 0 14px;
-}
-
-.hdc-chip-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.hdc-chip {
-  appearance: none;
-  border: 1px solid var(--hdc-border);
-  background: transparent;
-  color: var(--hdc-fg);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 7px 14px;
-  border-radius: var(--hdc-radius-pill);
-  cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 120ms ease;
-}
-
-.hdc-chip:hover {
-  border-color: color-mix(in srgb, var(--hdc-fg) 30%, var(--hdc-border));
-}
-
-.hdc-chip:active { transform: scale(0.97); }
-
-.hdc-chip.is-active {
-  background: var(--hdc-accent);
-  color: var(--hdc-accent-fg);
-  border-color: var(--hdc-accent);
-}
-
-.hdc-chip:focus-visible {
-  outline: 2px solid var(--hdc-fg);
-  outline-offset: 2px;
-}
-
-.hdc-feature-empty {
-  color: var(--hdc-muted);
-  font-size: 13px;
-  margin: 0;
-}
-
 /* ---------- narrow screens ---------- */
 
 @media (max-width: 700px) {
@@ -412,7 +354,7 @@ body {
 @media (max-width: 560px) {
   .hdc-tester { padding: 24px 16px 48px; }
   .hdc-preview-card { padding: 32px 24px; min-height: 160px; }
-  .hdc-panel { padding: 22px 20px 24px; }
+  .hdc-panel { padding: 14px 18px; }
   .hdc-toolbar__controls { width: 100%; }
   .hdc-font-picker { min-width: 0; flex: 1; }
   .hdc-select { min-width: 0; }
