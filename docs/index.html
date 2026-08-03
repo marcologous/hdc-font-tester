@@ -12,7 +12,28 @@
     <span class="hdc-brand">Hanken Design Co.&reg; Type Tester</span>
     <div class="hdc-toolbar__controls">
       <button type="button" id="hdc-invert-toggle" class="hdc-invert-btn" aria-pressed="false">Invert</button>
-      <select id="hdc-font-select" class="hdc-select"></select>
+      <div class="hdc-font-picker" id="hdc-font-picker">
+        <button
+          type="button"
+          id="hdc-font-picker-btn"
+          class="hdc-select hdc-font-picker__btn"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+        >
+          <span id="hdc-font-picker-label">Loading fonts…</span>
+        </button>
+        <div id="hdc-font-panel" class="hdc-font-panel" hidden>
+          <input
+            type="text"
+            id="hdc-font-search"
+            class="hdc-font-search"
+            placeholder="Search fonts…"
+            autocomplete="off"
+            aria-label="Search fonts"
+          />
+          <ul id="hdc-font-listbox" class="hdc-font-listbox" role="listbox"></ul>
+        </div>
+      </div>
     </div>
   </header>
 

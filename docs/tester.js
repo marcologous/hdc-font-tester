@@ -9,7 +9,12 @@
   const preview = document.getElementById('hdc-preview');
   const previewCard = document.querySelector('.hdc-preview-card');
   const invertToggle = document.getElementById('hdc-invert-toggle');
-  const fontSelect = document.getElementById('hdc-font-select');
+  const fontPicker = document.getElementById('hdc-font-picker');
+  const fontPickerBtn = document.getElementById('hdc-font-picker-btn');
+  const fontPickerLabel = document.getElementById('hdc-font-picker-label');
+  const fontPanel = document.getElementById('hdc-font-panel');
+  const fontSearch = document.getElementById('hdc-font-search');
+  const fontListbox = document.getElementById('hdc-font-listbox');
   const sizeInput = document.getElementById('hdc-size');
   const trackingInput = document.getElementById('hdc-tracking');
   const leadingInput = document.getElementById('hdc-leading');
@@ -72,6 +77,9 @@
   ];
 
   let fonts = [];
+  let filteredFonts = [];
+  let selectedFontId = null;
+  let highlightIndex = -1;
   let activeFeatures = new Set();
   let fontFaceStyleEl = null;
 
@@ -196,29 +204,102 @@
       fonts = [];
     }
 
-    renderFontOptions();
+    renderFontListbox();
     if (fonts.length) {
       await selectFont(fonts[0].id);
     } else {
+      fontPickerLabel.textContent = 'No fonts available';
       featureList.innerHTML = '<p class="hdc-feature-empty">No fonts available yet.</p>';
     }
   }
 
-  function renderFontOptions() {
-    fontSelect.innerHTML = '';
-    fonts.forEach((font) => {
-      const opt = document.createElement('option');
-      opt.value = font.id;
-      const label = `${font.family} — ${font.weight}${font.style !== 'normal' ? ' ' + font.style : ''}`;
-      opt.textContent = label;
-      fontSelect.appendChild(opt);
+  function fontLabel(font) {
+    return `${font.family} — ${font.weight}${font.style !== 'normal' ? ' ' + font.style : ''}`;
+  }
+
+  function renderFontListbox() {
+    const query = fontSearch.value.trim().toLowerCase();
+    filteredFonts = query ? fonts.filter((f) => fontLabel(f).toLowerCase().includes(query)) : fonts;
+
+    fontListbox.innerHTML = '';
+
+    if (!filteredFonts.length) {
+      const li = document.createElement('li');
+      li.className = 'hdc-font-option-empty';
+      li.textContent = fonts.length ? 'No matches.' : 'No fonts available yet.';
+      fontListbox.appendChild(li);
+      highlightIndex = -1;
+      return;
+    }
+
+    filteredFonts.forEach((font, index) => {
+      const li = document.createElement('li');
+      li.className = 'hdc-font-option';
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', String(font.id === selectedFontId));
+      li.textContent = fontLabel(font);
+      li.addEventListener('click', () => {
+        selectFont(font.id);
+        closeFontPanel();
+      });
+      li.addEventListener('mouseenter', () => setHighlight(index));
+      fontListbox.appendChild(li);
     });
+
+    highlightIndex = filteredFonts.findIndex((f) => f.id === selectedFontId);
+    if (highlightIndex === -1) highlightIndex = 0;
+    applyHighlight();
+  }
+
+  function applyHighlight() {
+    const items = fontListbox.querySelectorAll('.hdc-font-option');
+    items.forEach((el, i) => el.classList.toggle('is-highlighted', i === highlightIndex));
+    if (items[highlightIndex]) items[highlightIndex].scrollIntoView({ block: 'nearest' });
+  }
+
+  function setHighlight(index) {
+    highlightIndex = index;
+    applyHighlight();
+  }
+
+  function moveHighlight(delta) {
+    if (!filteredFonts.length) return;
+    highlightIndex = (highlightIndex + delta + filteredFonts.length) % filteredFonts.length;
+    applyHighlight();
+  }
+
+  function selectHighlighted() {
+    const font = filteredFonts[highlightIndex];
+    if (font) {
+      selectFont(font.id);
+      closeFontPanel();
+    }
+  }
+
+  function openFontPanel() {
+    fontPanel.hidden = false;
+    fontPickerBtn.setAttribute('aria-expanded', 'true');
+    fontSearch.value = '';
+    renderFontListbox();
+    fontSearch.focus();
+    document.addEventListener('click', handleOutsideClick);
+  }
+
+  function closeFontPanel() {
+    fontPanel.hidden = true;
+    fontPickerBtn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', handleOutsideClick);
+  }
+
+  function handleOutsideClick(e) {
+    if (!fontPicker.contains(e.target)) closeFontPanel();
   }
 
   async function selectFont(id) {
     const font = fonts.find((f) => f.id === id);
     if (!font) return;
-    fontSelect.value = id;
+    selectedFontId = id;
+    fontPickerLabel.textContent = fontLabel(font);
 
     const faceName = safeFontFaceName(font.filename);
     const styleEl = ensureFontFaceStyleEl();
@@ -314,7 +395,29 @@
     [sizeInput, trackingInput, leadingInput].forEach(updateSliderFill);
   }
 
-  fontSelect.addEventListener('change', (e) => selectFont(e.target.value));
+  fontPickerBtn.addEventListener('click', () => {
+    if (fontPanel.hidden) openFontPanel();
+    else closeFontPanel();
+  });
+
+  fontSearch.addEventListener('input', renderFontListbox);
+  fontSearch.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveHighlight(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveHighlight(-1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      selectHighlighted();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeFontPanel();
+      fontPickerBtn.focus();
+    }
+  });
+
   [sizeInput, trackingInput, leadingInput].forEach((el) => {
     el.addEventListener('input', updateTypography);
   });

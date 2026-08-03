@@ -117,6 +117,89 @@ body {
 .hdc-select:hover { border-color: color-mix(in srgb, var(--hdc-fg) 25%, var(--hdc-border)); }
 .hdc-select:focus-visible { outline: 2px solid var(--hdc-fg); outline-offset: 2px; }
 
+/* ---------- searchable font picker ---------- */
+
+.hdc-font-picker {
+  position: relative;
+}
+
+.hdc-font-picker__btn {
+  display: block;
+  width: 100%;
+}
+
+.hdc-font-picker__btn span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.hdc-font-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-width: 90vw;
+  background: var(--hdc-card);
+  border: 1px solid var(--hdc-border);
+  border-radius: var(--hdc-radius-md);
+  box-shadow: var(--hdc-shadow);
+  overflow: hidden;
+  z-index: 20;
+}
+
+.hdc-font-search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  font-size: 13px;
+  border: none;
+  border-bottom: 1px solid var(--hdc-border);
+  background: transparent;
+  color: var(--hdc-fg);
+  outline: none;
+}
+
+.hdc-font-search::placeholder {
+  color: var(--hdc-muted);
+}
+
+.hdc-font-listbox {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.hdc-font-option {
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: var(--hdc-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hdc-font-option:hover,
+.hdc-font-option.is-highlighted {
+  background: var(--hdc-track);
+}
+
+.hdc-font-option[aria-selected="true"] {
+  font-weight: 600;
+}
+
+.hdc-font-option-empty {
+  padding: 10px;
+  font-size: 13px;
+  color: var(--hdc-muted);
+}
+
 /* ---------- preview ---------- */
 
 .hdc-preview-card {
@@ -331,5 +414,7 @@ body {
   .hdc-preview-card { padding: 32px 24px; min-height: 160px; }
   .hdc-panel { padding: 22px 20px 24px; }
   .hdc-toolbar__controls { width: 100%; }
-  .hdc-select { min-width: 0; flex: 1; }
+  .hdc-font-picker { min-width: 0; flex: 1; }
+  .hdc-select { min-width: 0; }
+  .hdc-font-panel { width: 100%; right: 0; }
 }
