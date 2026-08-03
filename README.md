@@ -2,17 +2,19 @@
 
 A self-contained font-testing widget for the Hanken Design Co Shopify site: font
 picker, editable preview text, size/tracking/leading controls, and auto-detected
-OpenType feature toggles. Fonts are stored in this GitHub repo and managed through
-a small admin page — no database, no cloud storage account.
+OpenType feature toggles. Fonts are managed by just adding or removing files in a
+folder in this GitHub repo — no database, no admin login, no upload form.
 
 There are two ways to run this, in the same repo:
 
 - **`docs/`** — the recommended path. A fully static site hosted free on **GitHub
-  Pages**. No server to deploy; the admin page talks to GitHub's API directly from
-  the browser using your own personal access token.
-- **`server/` + `public/`** — an alternative Express server if you'd rather gate
-  font management behind one shared password instead of individual GitHub tokens.
-  Requires deploying a Node server somewhere (Render, Railway, Fly.io, a VPS).
+  Pages**. No server, no login: the tester lists whatever font files are actually
+  sitting in `docs/fonts/` and reads each one's family/weight/style straight out
+  of its own name table.
+- **`server/` + `public/`** — an alternative Express server with a token-gated
+  upload form, if you'd rather manage fonts through a page instead of GitHub's
+  own file UI. Requires deploying a Node server somewhere (Render, Railway,
+  Fly.io, a VPS).
 
 ## Recommended: GitHub Pages (`docs/`)
 
@@ -22,32 +24,27 @@ Repo → **Settings → Pages** → Source: **Deploy from a branch** → Branch:
 `main`, folder: **`/docs`** → Save. GitHub will build and publish at
 `https://<you>.github.io/hdc-font-tester/` (takes a minute on the first deploy).
 
-- Tester: `https://<you>.github.io/hdc-font-tester/`
-- Admin: `https://<you>.github.io/hdc-font-tester/admin/`
+### 2. Add / remove fonts
 
-### 2. Create a token to manage fonts
+There's no admin panel and nothing to log into. To add a font, go to
+`docs/fonts/` in this repo on github.com → **Add file → Upload files** → drag in
+a `.woff2`, `.woff`, `.ttf`, or `.otf` → commit. To remove one, open the file in
+`docs/fonts/` and delete it. (Or just `git push` / `git rm` if you'd rather work
+locally — it's a plain folder, no metadata file to keep in sync.)
 
-The admin page needs a GitHub **personal access token** with write access to this
-repo — this replaces a shared password. Anyone who manages fonts creates their own:
-
-1. GitHub → Settings → Developer settings → **Personal access tokens → Fine-grained
-   tokens → Generate new token**.
-2. Repository access: **Only select repositories** → this repo.
-3. Permissions: **Contents → Read and write**.
-4. Copy the token — you'll only see it once.
-
-Open `/admin`, paste the token in, and it's kept **only in that browser tab's
-memory** — never written to disk, localStorage, or any server. Refreshing the page
-clears it; you'll paste it again next time.
-
-### 3. Add / remove fonts
-
-Upload a font file (`.woff2`, `.woff`, `.ttf`, or `.otf`) with a family name,
-weight, and style. This commits the file to `docs/fonts/` and updates
-`docs/manifest.json` directly via GitHub's API. Removing a font does the reverse.
+The tester discovers files by asking GitHub's API "what's in `docs/fonts/` right
+now" on every page load (an unauthenticated, read-only call — fine for a public
+repo), then parses each file in the browser with `opentype.js` to pull out its
+family name, weight, and italic/normal directly from the font's own tables. There's
+no manifest to hand-maintain — the filename and the font's internal metadata are
+the only source of truth.
 
 GitHub Pages takes roughly 30–60 seconds to rebuild after a commit, so a newly
 added or removed font takes a moment to actually show up on the live tester page.
+
+Note: the unauthenticated directory listing is capped at 60 requests/hour per
+visitor IP by GitHub — plenty for a small internal tool, but worth knowing if this
+page ever sees heavy traffic.
 
 ### Important: the font-assets repo (and files) are public
 
@@ -59,7 +56,7 @@ browser-based font tester (the real bytes have to reach the browser to be
 parsed/rendered), not something specific to hosting on Pages. Worth keeping in
 mind if these are full retail cuts rather than throwaway demo/trial fonts.
 
-### 4. Embed on your Shopify page
+### 3. Embed on your Shopify page
 
 Create a dedicated page in Shopify, edit it in the theme customizer, and add a
 **Custom Liquid** section:
@@ -72,13 +69,10 @@ Create a dedicated page in Shopify, edit it in the theme customizer, and add a
 ></iframe>
 ```
 
-Never embed `/admin` anywhere public — it's meant to be opened directly by
-whoever manages fonts, not linked from the storefront.
-
 ## Alternative: self-hosted server (`server/` + `public/`)
 
-Use this if you'd rather have one shared `ADMIN_PASSWORD` for the team instead of
-everyone needing their own GitHub token.
+Use this if you'd rather manage fonts through a token-gated upload page instead
+of GitHub's own file UI, or want one shared `ADMIN_PASSWORD` for a team.
 
 ### 1. One-time setup: GitHub repo + token
 

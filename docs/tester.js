@@ -1,4 +1,11 @@
 (function () {
+  const OWNER = 'marcologous';
+  const REPO = 'hdc-font-tester';
+  const BRANCH = 'main';
+  const FONTS_DIR = 'docs/fonts';
+  const API_BASE = 'https://api.github.com';
+  const ALLOWED_EXTENSIONS = new Set(['woff2', 'woff', 'ttf', 'otf']);
+
   const preview = document.getElementById('hdc-preview');
   const fontSelect = document.getElementById('hdc-font-select');
   const sizeInput = document.getElementById('hdc-size');
@@ -50,6 +57,17 @@
   }
 
   const DEFAULT_ON_FEATURES = new Set(['liga', 'kern', 'calt']);
+  const WEIGHT_KEYWORDS = [
+    [/thin/i, 100],
+    [/extra ?light|ultra ?light/i, 200],
+    [/light/i, 300],
+    [/regular|normal|roman|book/i, 400],
+    [/medium/i, 500],
+    [/semi ?bold|demi ?bold/i, 600],
+    [/bold/i, 700],
+    [/extra ?bold|ultra ?bold/i, 800],
+    [/black|heavy/i, 900],
+  ];
 
   let fonts = [];
   let activeFeatures = new Set();
@@ -63,22 +81,106 @@
     return fontFaceStyleEl;
   }
 
-  function fontFaceName(font) {
-    return `hdc-font-${font.id}`;
+  function safeFontFaceName(filename) {
+    return `hdc-font-${filename.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  }
+
+  function pickName(nameRecord) {
+    if (!nameRecord) return null;
+    if (typeof nameRecord === 'string') return nameRecord.trim() || null;
+    const value = nameRecord.en || Object.values(nameRecord)[0];
+    return value ? String(value).trim() || null : null;
+  }
+
+  function familyFromFilename(filename) {
+    const base = filename.replace(/\.[^.]+$/, '');
+    return base.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  function guessWeightFromName(name) {
+    if (!name) return 400;
+    for (const [re, weight] of WEIGHT_KEYWORDS) {
+      if (re.test(name)) return weight;
+    }
+    return 400;
+  }
+
+  function readFontMetadata(parsed, filename) {
+    const names = parsed.names || {};
+    const family = pickName(names.preferredFamily) || pickName(names.fontFamily) || familyFromFilename(filename);
+    const subfamily = pickName(names.preferredSubfamily) || pickName(names.fontSubfamily) || '';
+
+    const os2 = parsed.tables && parsed.tables.os2;
+    const head = parsed.tables && parsed.tables.head;
+    const weight = os2 && os2.usWeightClass ? String(os2.usWeightClass) : String(guessWeightFromName(subfamily));
+
+    const isItalicName = /italic|oblique/i.test(subfamily);
+    const fsSelectionItalic = os2 && typeof os2.fsSelection === 'number' && (os2.fsSelection & 0x01) !== 0;
+    const macStyleItalic = head && typeof head.macStyle === 'number' && (head.macStyle & 0x02) !== 0;
+    const style = isItalicName || fsSelectionItalic || macStyleItalic ? 'italic' : 'normal';
+
+    return { family, weight, style };
+  }
+
+  async function listFontFiles() {
+    const res = await fetch(`${API_BASE}/repos/${OWNER}/${REPO}/contents/${FONTS_DIR}?ref=${BRANCH}`, {
+      cache: 'no-store',
+    });
+    if (res.status === 404) return [];
+    if (!res.ok) {
+      if (res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0') {
+        throw new Error('GitHub API rate limit reached -- try again in a few minutes.');
+      }
+      throw new Error(`Failed to list fonts (${res.status})`);
+    }
+    const data = await res.json();
+    const entries = Array.isArray(data) ? data : [];
+    return entries.filter((entry) => {
+      if (entry.type !== 'file') return false;
+      const ext = entry.name.split('.').pop().toLowerCase();
+      return ALLOWED_EXTENSIONS.has(ext);
+    });
   }
 
   async function loadFonts() {
     try {
-      const res = await fetch(`manifest.json?_=${Date.now()}`, { cache: 'no-store' });
-      const data = await res.json();
-      fonts = (Array.isArray(data) ? data : []).map((f) => ({
-        ...f,
-        url: `fonts/${f.filename}`,
-      }));
+      const files = await listFontFiles();
+      const parsedFonts = await Promise.all(
+        files.map(async (file) => {
+          const url = `fonts/${encodeURIComponent(file.name)}`;
+          try {
+            const buffer = await fetch(url).then((r) => r.arrayBuffer());
+            const parsed = opentype.parse(buffer);
+            const meta = readFontMetadata(parsed, file.name);
+            return { id: file.name, filename: file.name, url, parsed, ...meta };
+          } catch (err) {
+            console.error(`Failed to parse ${file.name}`, err);
+            return {
+              id: file.name,
+              filename: file.name,
+              url,
+              parsed: null,
+              family: familyFromFilename(file.name),
+              weight: '400',
+              style: 'normal',
+            };
+          }
+        })
+      );
+
+      parsedFonts.sort((a, b) => {
+        const familyCompare = a.family.localeCompare(b.family);
+        if (familyCompare !== 0) return familyCompare;
+        return Number(a.weight) - Number(b.weight);
+      });
+
+      fonts = parsedFonts;
     } catch (err) {
       console.error('Failed to load fonts', err);
+      featureList.innerHTML = `<p class="hdc-feature-empty">${err.message || 'Failed to load fonts.'}</p>`;
       fonts = [];
     }
+
     renderFontOptions();
     if (fonts.length) {
       await selectFont(fonts[0].id);
@@ -103,7 +205,7 @@
     if (!font) return;
     fontSelect.value = id;
 
-    const faceName = fontFaceName(font);
+    const faceName = safeFontFaceName(font.filename);
     const styleEl = ensureFontFaceStyleEl();
     styleEl.textContent = `@font-face {
       font-family: "${faceName}";
@@ -116,18 +218,23 @@
     preview.style.fontWeight = font.weight;
     preview.style.fontStyle = font.style;
 
-    await detectFeatures(font);
+    detectFeatures(font);
   }
 
-  async function detectFeatures(font) {
+  function detectFeatures(font) {
     featureList.innerHTML = '<p class="hdc-feature-empty">Loading features…</p>';
     activeFeatures = new Set(DEFAULT_ON_FEATURES);
+
+    if (!font.parsed) {
+      featureList.innerHTML = '<p class="hdc-feature-empty">Could not read OpenType features for this font.</p>';
+      applyFeatureSettings();
+      return;
+    }
+
     try {
-      const buffer = await fetch(font.url).then((r) => r.arrayBuffer());
-      const parsed = opentype.parse(buffer);
       const tags = new Set();
       ['gsub', 'gpos'].forEach((tableName) => {
-        const table = parsed.tables[tableName];
+        const table = font.parsed.tables[tableName];
         if (table && table.features) {
           table.features.forEach((f) => tags.add(f.tag));
         }
