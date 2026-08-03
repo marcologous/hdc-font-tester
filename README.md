@@ -34,10 +34,10 @@ locally — it's a plain folder, no metadata file to keep in sync.)
 
 The tester discovers files by asking GitHub's API "what's in `docs/fonts/` right
 now" on every page load (an unauthenticated, read-only call — fine for a public
-repo), then parses each file in the browser with `opentype.js` to pull out its
-family name, weight, and italic/normal directly from the font's own tables. There's
-no manifest to hand-maintain — the filename and the font's internal metadata are
-the only source of truth.
+repo), then parses each file in the browser with [lib-font](https://github.com/Pomax/lib-font)
+to pull out its family name, weight, and italic/normal directly from the font's
+own tables. There's no manifest to hand-maintain — the filename and the font's
+internal metadata are the only source of truth.
 
 GitHub Pages takes roughly 30–60 seconds to rebuild after a commit, so a newly
 added or removed font takes a moment to actually show up on the live tester page.
@@ -124,9 +124,16 @@ occasionally-used internal tool, just not instant.
 
 ## How OpenType feature detection works
 
-The tester loads each font's binary in the browser and parses it with
-[opentype.js](https://github.com/opentype/opentype.js) to read the GSUB/GPOS
-feature tags it actually contains (`liga`, `smcp`, `ss01`–`ss20`, `onum`, etc.).
-Only features the font really supports are shown as toggles — `liga`/`kern`/`calt`
-default on (matching normal browser rendering), everything else defaults off until
-you switch it on.
+The tester loads each font's binary in the browser and parses it to read the
+GSUB/GPOS feature tags it actually contains (`liga`, `smcp`, `ss01`–`ss20`,
+`onum`, etc.). Only features the font really supports are shown as toggles —
+`liga`/`kern`/`calt` default on (matching normal browser rendering), everything
+else defaults off until you switch it on.
+
+The `docs/` (GitHub Pages) version uses [lib-font](https://github.com/Pomax/lib-font),
+which correctly handles `.woff2` (via its bundled Brotli decoder) as well as
+`.woff`/`.ttf`/`.otf`. The `server/` alternative's tester still uses
+[opentype.js](https://github.com/opentype/opentype.js), which **cannot parse
+`.woff2` files** (it doesn't include a Brotli decompressor) — features and
+weight/style will silently fail to detect for `.woff2` uploads there. Stick to
+`.woff`/`.ttf`/`.otf` if you're using the `server/` path, or use `docs/` instead.
