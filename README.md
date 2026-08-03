@@ -19,3 +19,33 @@ no upload form.
 - Font files committed to `docs/fonts/` in this repo exist **only to power this
   tester**. They are not licensed for any other use — don't copy, embed, ship,
   or redistribute them from here.
+
+## Embedding (e.g. on a Shopify page)
+
+The tester auto-reports its real content height to whatever page embeds it, so
+the iframe can resize to fit exactly — no fixed height that clips long text,
+and no internal scrollbar stacked under the page's own scroll. Use an iframe
+plus a small listener script, not just a bare `<iframe>`:
+
+```html
+<iframe
+  id="hdc-font-tester-frame"
+  src="https://marcologous.github.io/hdc-font-tester/"
+  style="width:100%; height:600px; border:0; display:block;"
+  title="Hanken Design Co. Type Tester"
+  scrolling="no"
+></iframe>
+<script>
+  window.addEventListener('message', function (event) {
+    if (event.origin !== 'https://marcologous.github.io') return;
+    var data = event.data;
+    if (data && data.source === 'hdc-font-tester') {
+      var frame = document.getElementById('hdc-font-tester-frame');
+      if (frame) frame.style.height = data.height + 'px';
+    }
+  });
+</script>
+```
+
+The `height:600px` is just a placeholder shown before the first resize message
+arrives — it'll snap to the real height within a moment of the iframe loading.
