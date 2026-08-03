@@ -8,9 +8,12 @@
 </head>
 <body>
 <div class="hdc-tester" id="hdc-tester">
-  <header class="hdc-toolbar">
-    <div class="hdc-toolbar__controls">
+  <p id="hdc-status" class="hdc-status" hidden></p>
+
+  <div class="hdc-panel">
+    <div class="hdc-controls-row">
       <button type="button" id="hdc-invert-toggle" class="hdc-invert-btn" aria-pressed="false">Invert</button>
+
       <div class="hdc-font-picker" id="hdc-font-picker">
         <button
           type="button"
@@ -33,35 +36,31 @@
           <ul id="hdc-font-listbox" class="hdc-font-listbox" role="listbox"></ul>
         </div>
       </div>
-    </div>
-  </header>
 
-  <p id="hdc-status" class="hdc-status" hidden></p>
-
-  <div class="hdc-panel">
-    <div class="hdc-sliders">
-      <div class="hdc-control">
-        <div class="hdc-control__head">
-          <label for="hdc-size">Size</label>
-          <span class="hdc-control__value" id="hdc-size-value"></span>
+      <div class="hdc-sliders">
+        <div class="hdc-control">
+          <div class="hdc-control__head">
+            <label for="hdc-size">Size</label>
+            <span class="hdc-control__value" id="hdc-size-value"></span>
+          </div>
+          <input type="range" id="hdc-size" min="8" max="300" step="1" value="48" />
         </div>
-        <input type="range" id="hdc-size" min="8" max="300" step="1" value="48" />
-      </div>
 
-      <div class="hdc-control">
-        <div class="hdc-control__head">
-          <label for="hdc-tracking">Tracking</label>
-          <span class="hdc-control__value" id="hdc-tracking-value"></span>
+        <div class="hdc-control">
+          <div class="hdc-control__head">
+            <label for="hdc-tracking">Tracking</label>
+            <span class="hdc-control__value" id="hdc-tracking-value"></span>
+          </div>
+          <input type="range" id="hdc-tracking" min="-100" max="500" step="1" value="0" />
         </div>
-        <input type="range" id="hdc-tracking" min="-100" max="500" step="1" value="0" />
-      </div>
 
-      <div class="hdc-control">
-        <div class="hdc-control__head">
-          <label for="hdc-leading">Leading</label>
-          <span class="hdc-control__value" id="hdc-leading-value"></span>
+        <div class="hdc-control">
+          <div class="hdc-control__head">
+            <label for="hdc-leading">Leading</label>
+            <span class="hdc-control__value" id="hdc-leading-value"></span>
+          </div>
+          <input type="range" id="hdc-leading" min="80" max="250" step="1" value="120" />
         </div>
-        <input type="range" id="hdc-leading" min="80" max="250" step="1" value="120" />
       </div>
     </div>
   </div>
