@@ -3,14 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HDC Font Tester</title>
+<title>Hanken Design Co.&reg; Type Tester</title>
 <link rel="stylesheet" href="tester.css" />
 </head>
 <body>
 <div class="hdc-tester" id="hdc-tester">
   <header class="hdc-toolbar">
-    <span class="hdc-brand">Type Tester</span>
-    <select id="hdc-font-select" class="hdc-select"></select>
+    <span class="hdc-brand">Hanken Design Co.&reg; Type Tester</span>
+    <div class="hdc-toolbar__controls">
+      <button type="button" id="hdc-invert-toggle" class="hdc-invert-btn" aria-pressed="false">Invert</button>
+      <select id="hdc-font-select" class="hdc-select"></select>
+    </div>
   </header>
 
   <div class="hdc-preview-card">

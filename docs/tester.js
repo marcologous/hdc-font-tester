@@ -7,6 +7,8 @@
   const ALLOWED_EXTENSIONS = new Set(['woff2', 'woff', 'ttf', 'otf']);
 
   const preview = document.getElementById('hdc-preview');
+  const previewCard = document.querySelector('.hdc-preview-card');
+  const invertToggle = document.getElementById('hdc-invert-toggle');
   const fontSelect = document.getElementById('hdc-font-select');
   const sizeInput = document.getElementById('hdc-size');
   const trackingInput = document.getElementById('hdc-tracking');
@@ -315,6 +317,12 @@
   fontSelect.addEventListener('change', (e) => selectFont(e.target.value));
   [sizeInput, trackingInput, leadingInput].forEach((el) => {
     el.addEventListener('input', updateTypography);
+  });
+
+  invertToggle.addEventListener('click', () => {
+    const nowInverted = !previewCard.classList.contains('is-inverted');
+    previewCard.classList.toggle('is-inverted', nowInverted);
+    invertToggle.setAttribute('aria-pressed', String(nowInverted));
   });
 
   updateTypography();
